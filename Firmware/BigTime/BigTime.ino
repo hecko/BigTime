@@ -1,3 +1,4 @@
+
 /*
  7-17-2011
  Spark Fun Electronics 2011
@@ -75,7 +76,9 @@ int segD = 6; //Display pin 3
 int segE = 5; //Display pin 5
 int segF = 10; //Display pin 11
 int segG = A0; //Display pin 15
-int colons = 8; //Display pin 4
+//int colons = 8; //Display pin 4
+
+int colons = A2; //Display pin 4
 
 int theButton2 = 3;
 int theButton = 2;
