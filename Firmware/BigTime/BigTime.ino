@@ -30,10 +30,10 @@
  HIGH 0xDA
  LOW 0xE2
  Extended 0x07
-
-test avrdude programmer:
-avrdude -c usbtiny -p m328p
-avrdude -c usbtiny -p m328p -U lfuse:w:0xe2:m -U hfuse:w:0xda:m -U efuse:w:0x07:m
+ 
+ test avrdude programmer:
+ avrdude -c usbtiny -p m328p
+ avrdude -c usbtiny -p m328p -U lfuse:w:0xe2:m -U hfuse:w:0xda:m -U efuse:w:0x07:m
  
  3,600 seconds in an hour
  1 time check per hour, 2 seconds at 13mA
@@ -68,8 +68,8 @@ int show_the_time = false;
 int always_on = false;
 
 long seconds = 55;
-int minutes = 54;
-int hours = 19;
+int minutes = 48;
+int hours = 23;
 
 int display_brightness = 15000; //A larger number makes the display more dim. This is set correctly below.
 
@@ -84,8 +84,8 @@ int segG = A0; //Display pin 15
 
 int colons = A2; //Display pin 4
 
-int theButton2 = 3;
-int theButton = 2;
+int theButton2 = 3; // bottom button
+int theButton = 2;  // top button
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 //The very important 32.686kHz interrupt handler
@@ -184,15 +184,13 @@ void loop() {
   if(show_the_time == true || always_on == true) {
 
     //Debounce
-    while(digitalRead(theButton) == LOW) ; //Wait for you to remove your finger
     delay(100);
-    while(digitalRead(theButton) == LOW) ; //Wait for you to remove your finger
 
     //Serial.print(hours, DEC);
     //Serial.print(":");
     //Serial.print(minutes, DEC);
     //Serial.print(":");
-    // Serial.println(seconds, DEC);
+    //Serial.println(seconds, DEC);
 
     showTime(); //Show the current time for a few seconds
 
@@ -222,7 +220,7 @@ void showTime() {
   int combinedTime = (hours * 100) + minutes; //Combine the hours and minutes
   //int combinedTime = (minutes * 100) + seconds; //For testing, combine the minutes and seconds
 
-    boolean buttonPreviouslyHit = false;
+  boolean buttonPreviouslyHit = false;
 
   long startTime = millis();
   while( (millis() - startTime) < 700) {
@@ -236,7 +234,7 @@ void showTime() {
   // mili = 1.000
   // micro = 1.000.000
 
-    int min_10 = minutes / 10;
+  int min_10 = minutes / 10;
   int min_01 = minutes - (min_10 * 10);
 
   startTime = millis();
@@ -320,29 +318,6 @@ void setTime(void) {
   }
 
 }
-
-//This is a not-so-accurate delay routine
-//Calling fake_msdelay(100) will delay for about 100ms
-//Assumes 8MHz clock
-/*void fake_msdelay(int x){
- for( ; x > 0 ; x--)
- fake_usdelay(1000);
- }*/
-
-//This is a not-so-accurate delay routine
-//Calling fake_usdelay(100) will delay for about 100us
-//Assumes 8MHz clock
-/*void fake_usdelay(int x){
- for( ; x > 0 ; x--) {
- __asm__("nop\n\t"); 
- __asm__("nop\n\t"); 
- __asm__("nop\n\t"); 
- __asm__("nop\n\t"); 
- __asm__("nop\n\t"); 
- __asm__("nop\n\t"); 
- __asm__("nop\n\t"); 
- }
- }*/
 
 void displayNumber(int toDisplay, boolean displayColon) {
 
@@ -590,3 +565,4 @@ Segments
 
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
