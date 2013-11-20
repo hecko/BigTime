@@ -29,7 +29,11 @@
  So the fuse bits I get using AVR studio:
  HIGH 0xDA
  LOW 0xE2
- Extended 0xFF  
+ Extended 0x07
+
+test avrdude programmer:
+avrdude -c usbtiny -p m328p
+avrdude -c usbtiny -p m328p -U lfuse:w:0xe2:m -U hfuse:w:0xda:m -U efuse:w:0x07:m
  
  3,600 seconds in an hour
  1 time check per hour, 2 seconds at 13mA
@@ -64,8 +68,8 @@ int show_the_time = false;
 int always_on = false;
 
 long seconds = 55;
-int minutes = 22;
-int hours = 12;
+int minutes = 54;
+int hours = 19;
 
 int display_brightness = 15000; //A larger number makes the display more dim. This is set correctly below.
 
