@@ -67,9 +67,9 @@ int show_the_time = false;
 //This will drain the battery in about 15 hours 
 int always_on = false;
 
-long seconds = 55;
-int minutes = 48;
-int hours = 23;
+long seconds = 30;
+int minutes = 30;
+int hours = 12;
 
 int display_brightness = 15000; //A larger number makes the display more dim. This is set correctly below.
 
@@ -80,9 +80,9 @@ int segD = 6; //Display pin 3
 int segE = 5; //Display pin 5
 int segF = 10; //Display pin 11
 int segG = A0; //Display pin 15
-//int colons = 8; //Display pin 4
+int colons = 8; //Display pin 4
 
-int colons = A2; //Display pin 4
+int oneLed = A2; //Display pin 4
 
 int theButton2 = 3; // bottom button
 int theButton = 2;  // top button
@@ -105,7 +105,6 @@ SIGNAL(TIMER2_OVF_vect){
 //The interrupt occurs when you push the button
 SIGNAL(INT0_vect){
   //When you hit the button, we will display the time
-  //if(show_the_time == false) 
   show_the_time = true;
 }
 
@@ -116,6 +115,8 @@ void setup() {
     digitalWrite(x, LOW);
   }
 
+  pinMode(oneLed, OUTPUT);
+
   pinMode(theButton, INPUT); //This is the main button, tied to INT0
   digitalWrite(theButton, HIGH); //Enable internal pull up on button
 
@@ -123,14 +124,13 @@ void setup() {
   digitalWrite(theButton2, HIGH); //Enable internal pull up on button
 
   //These pins are used to control the display
-  pinMode(segA, OUTPUT);
-  pinMode(segB, OUTPUT);
-  pinMode(segC, OUTPUT);
-  pinMode(segD, OUTPUT);
-  pinMode(segE, OUTPUT);
-  pinMode(segF, OUTPUT);
-  pinMode(segG, OUTPUT);
-
+  pinMode(segA,   OUTPUT);
+  pinMode(segB,   OUTPUT);
+  pinMode(segC,   OUTPUT);
+  pinMode(segD,   OUTPUT);
+  pinMode(segE,   OUTPUT);
+  pinMode(segF,   OUTPUT);
+  pinMode(segG,   OUTPUT);
   pinMode(colons, OUTPUT);
 
   //Power down various bits of hardware to lower power usage  
@@ -175,13 +175,13 @@ void setup() {
 }
 
 void loop() {
-  if(always_on == false) {
-    Serial.print("Going to bed...");
-    delayMicroseconds(10000); // to flush the serial buffer
-    sleep_mode(); //Stop everything and go to sleep. Wake up if the Timer2 buffer overflows or if you hit the button
-  }
+  digitalWrite(oneLed, HIGH); //oneLed on
+  delay(1);
+  digitalWrite(oneLed, LOW); //oneLed off
 
-  if(show_the_time == true || always_on == true) {
+  sleep_mode(); //Stop everything and go to sleep. Wake up if the Timer2 buffer overflows or if you hit the button
+
+  if(show_the_time == true) {
 
     //Debounce
     delay(100);
@@ -225,7 +225,7 @@ void showTime() {
   long startTime = millis();
   while( (millis() - startTime) < 700) {
     //Each of these itterations takes about 8ms, display the colon
-    displayNumber(hours, true); //Each call takes about 8ms, display the colon
+    displayNumber(hours, false); //Each call takes about 8ms, display the colon
     delayMicroseconds(10000); //Wait before we paint the display again - this makes the dimm effect - waiting
   }
 
@@ -239,7 +239,7 @@ void showTime() {
 
   startTime = millis();
   while( (millis() - startTime) < 500) {
-    displayNumber(min_10, false);
+    displayNumber(min_10, true);
     delayMicroseconds(12000); //Wait before we paint the display again - this makes the dimm effect - waiting (and saves battery)
 
   }
@@ -249,7 +249,7 @@ void showTime() {
   startTime = millis();
   while( (millis() - startTime) < 500) {
     displayNumber(min_01, false); //Each call takes about 8ms, display the colon
-    delayMicroseconds(12000); //Wait before we paint the display again - this makes the dimm effect - waiting
+    delayMicroseconds(12000);     //Wait before we paint the display again - this makes the dimm effect - waiting
   }
 
 
