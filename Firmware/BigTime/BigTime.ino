@@ -1,4 +1,3 @@
-
 /*
  7-17-2011
  Spark Fun Electronics 2011
@@ -31,7 +30,9 @@
  LOW 0xE2
  Extended 0x07
  
- test avrdude programmer:
+ test avrdude programmer and flash fuses
+ make sure you are not powering the device with the programmer and the other way around!
+ make sure the battery is in an charged
  avrdude -c usbtiny -p m328p
  avrdude -c usbtiny -p m328p -U lfuse:w:0xe2:m -U hfuse:w:0xda:m -U efuse:w:0x07:m
  
