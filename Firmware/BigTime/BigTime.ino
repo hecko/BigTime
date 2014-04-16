@@ -35,6 +35,7 @@
  make sure the battery is in an charged
  avrdude -c usbtiny -p m328p
  avrdude -c usbtiny -p m328p -U lfuse:w:0xe2:m -U hfuse:w:0xda:m -U efuse:w:0x07:m
+ avrdude.exe -c usbtiny -p m328p -U lfuse:w:0xe2:m -U hfuse:w:0xda:m -U efuse:w:0x07:m
  
  3,600 seconds in an hour
  1 time check per hour, 2 seconds at 13mA
