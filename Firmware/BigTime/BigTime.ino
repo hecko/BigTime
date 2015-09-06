@@ -2,12 +2,13 @@
  7-17-2011
  Spark Fun Electronics 2011
  Nathan Seidle
+ hacked by Marcel Hecko 2013, 2015
 
  This code is public domain but you buy me a beer if you use this and we meet someday (Beerware license).
 
- This is the firmware for BigTime, the wrist watch kit. It is based on an ATmega328 running with internal
+ This is the firmware for BigTime, the wrist watch kit clone (!). It is based on an ATmega328P running with internal
  8MHz clock and external 32kHz crystal for keeping the time (aka RTC). The code and system have been tweaked
- to lower the power consumption of the ATmeg328 as much as possible. The watch currently uses about
+ to lower the power consumption of the ATmeg328P as much as possible. The watch currently uses about
  1.2uA in idle (non-display) mode and about 13mA when displaying the time. With a 200mAh regular
  CR2032 battery you should get 2-3 years of use!
 
@@ -35,7 +36,6 @@
  make sure the battery is in an charged
  avrdude -c usbtiny -p m328p
  avrdude -c usbtiny -p m328p -U lfuse:w:0xe2:m -U hfuse:w:0xda:m -U efuse:w:0x07:m
- avrdude.exe -c usbtiny -p m328p -U lfuse:w:0xe2:m -U hfuse:w:0xda:m -U efuse:w:0x07:m
 
  3,600 seconds in an hour
  1 time check per hour, 2 seconds at 13mA
@@ -58,43 +58,42 @@
 // Set this variable to change how long the time is shown on the watch face. In milliseconds so 1677 = 1.677 seconds
 int show_the_time = false;
 
+// initial time after programming
 long seconds = 30;
-int minutes = 30;
-int hours = 12;
+int minutes = 15;
+int hours = 1;
 
 int display_brightness = 15000; //A larger number makes the display more dim. This is set correctly below.
 
-int segA = 9;   //Display pin 14
-int segB = A1;  //Display pin 16
-int segC = 7;   //Display pin 13
-int segD = 6;   //Display pin 3
-int segE = 5;   //Display pin 5
-int segF = 10;  //Display pin 11
-int segG = A0;  //Display pin 15
-int colons = 8; //Display pin 4
+int segA = 9;   // Display pin 14
+int segB = A1;  // Display pin 16
+int segC = 7;   // Display pin 13
+int segD = 6;   // Display pin 3
+int segE = 5;   // Display pin 5
+int segF = 10;  // Display pin 11
+int segG = A0;  // Display pin 15
+int colons = 8; // Display pin 4
 
-int oneLed = A2; //Display pin 4
+int oneLed = A2; // pin 4
 
-int theButton2 = 3; // bottom button
-int theButton = 2;  // top button
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+int topButton = 2;    // top button
+int bottomButton = 3; // bottom button
 
-//The very important 32.686kHz interrupt handler
+// The very important 32.686kHz interrupt handler
 SIGNAL(TIMER2_OVF_vect) {
-  seconds += 8; //We sleep for 8 seconds instead of 1 to save more power
-
-  //Update the minutes and hours variables
-  minutes += seconds / 60; //Example: seconds = 2317, minutes = 58 + 38 = 96
-  seconds %= 60; //seconds = 37
-  hours += minutes / 60; //12 + (96 / 60) = 13
-  minutes %= 60; //minutes = 36
+  // We sleep for 8 seconds to save more power
+  seconds += 8; 
+  // Update the minute and hour variables
+  minutes += seconds / 60;
+  seconds %= 60;
+  hours += minutes / 60;
+  minutes %= 60;
 
   while (hours > 12) hours -= 12;
 }
 
-//The interrupt occurs when you push the button
+// The interrupt occurs when you push the top button
 SIGNAL(INT0_vect) {
-  //When you hit the button, we will display the time
   show_the_time = true;
 }
 
@@ -107,11 +106,11 @@ void setup() {
 
   pinMode(oneLed, OUTPUT);
 
-  pinMode(theButton, INPUT); //This is the main top button, tied to INT0
-  digitalWrite(theButton, HIGH); //Enable internal pull up on button
+  pinMode(topButton, INPUT); //This is the main top button, tied to INT0
+  digitalWrite(topButton, HIGH); //Enable internal pull up on button
 
-  pinMode(theButton2, INPUT); //This is the main bottom button, tied to INT0
-  digitalWrite(theButton2, HIGH); //Enable internal pull up on button
+  pinMode(bottomButton, INPUT); //This is the main bottom button, tied to INT0
+  digitalWrite(bottomButton, HIGH); //Enable internal pull up on button
 
   //These pins are used to control the display
   pinMode(segA,   OUTPUT);
@@ -136,37 +135,38 @@ void setup() {
 
   power_twi_disable();
   power_spi_disable();
-  // power_usart0_disable(); // Needed for serial.print
+  power_usart0_disable(); // Needed for serial.print
   // power_timer0_disable(); // Needed for delay and millis()
   power_timer1_disable();
-  //power_timer2_disable(); // Needed for asynchronous 32kHz operation
+  // power_timer2_disable(); // Needed for asynchronous 32kHz operation
 
   // Setup TIMER2
   TCCR2A = 0x00;
-  //TCCR2B = (1<<CS22)|(1<<CS20); //Set CLK/128 or overflow interrupt every 1s
-  TCCR2B = (1 << CS22) | (1 << CS21) | (1 << CS20); //Set CLK/1024 or overflow interrupt every 8s
-  ASSR = (1 << AS2); //Enable asynchronous operation
-  TIMSK2 = (1 << TOIE2); //Enable the timer 2 interrupt
+  // Set CLK/1024 or overflow interrupt every 8s
+  TCCR2B = (1 << CS22) | (1 << CS21) | (1 << CS20);
+  // Enable asynchronous operation
+  ASSR = (1 << AS2);
+  // Enable the timer 2 interrupt
+  TIMSK2 = (1 << TOIE2); 
+  // Setup external INT0 interrupt
+  // Interrupt on falling edge
+  EICRA = (1 << ISC01);
+  // Enable INT0 interrupt
+  EIMSK = (1 << INT0);
 
-  //Setup external INT0 interrupt
-  EICRA = (1 << ISC01); //Interrupt on falling edge
-  EIMSK = (1 << INT0); //Enable INT0 interrupt
+  // System clock futzing
+  // CLKPR = (1<<CLKPCE); //Enable clock writing
+  // CLKPR = (1<<CLKPS3); //Divide the system clock by 256
 
-  //System clock futzing
-  //CLKPR = (1<<CLKPCE); //Enable clock writing
-  //CLKPR = (1<<CLKPS3); //Divide the system clock by 256
-
-  Serial.begin(9600);
-  Serial.println("BigTime Testing:");
-
-  showTime(); //Show the current time on startup
-
-  sei(); //Enable global interrupts
+  // Show the current time on startup
+  showTime();
+  //Enable global interrupts
+  sei();
 }
 
 void loop() {
   digitalWrite(oneLed, HIGH); // oneLed on
-  delay(1);
+  delayMicroseconds(1000);
   digitalWrite(oneLed, LOW); // oneLed off
 
   sleep_mode(); //Stop everything and go to sleep. Wake up if the Timer2 buffer overflows or if you hit the button
@@ -174,11 +174,11 @@ void loop() {
   if (show_the_time == true) {
 
     // Debounce
-    delay(100);
+    delayMicroseconds(100000);
     showTime(); //Show the current time
 
     // If you are holding the button after the time is shown, then you must be wanting to to adjust the time
-    if (digitalRead(theButton) == LOW) {
+    if (digitalRead(topButton) == LOW) {
       setTime();
     }
 
@@ -192,81 +192,67 @@ void showTime() {
   int min_01 = minutes - (min_10 * 10);
   long startTime;
 
-  Serial.println("show time mode");
-
   startTime = millis();
   while ( (millis() - startTime) < 700) {
-    displayNumberFor(hours, false, 20);
-    delay(9);
+    displayNumberFor(hours, true, 20);
+    delayMicroseconds(8000);
   }
-  delay(500);
+  delayMicroseconds(500000);
 
   startTime = millis();
   while ( (millis() - startTime) < 500) {
-    displayNumberFor(min_10, true, 20);
-    delay(11);
+    displayNumberFor(min_10, false, 20);
+    delayMicroseconds(8000);
   }
-  delay(400);
+  delayMicroseconds(400000);
 
   startTime = millis();
   while ( (millis() - startTime) < 500) {
     displayNumberFor(min_01, false, 20);
-    delay(11);
+    delayMicroseconds(8000);
   }
 }
 
-// This routine occurs when you hold the button down
-// The colon blinks indicating we are in this mode
-// Holding the button down will increase the time (accelerates)
-// Releasing the button for more than 2 seconds will exit this mode
+// This routine occurs when you hold the top button down
 void setTime(void) {
-
-  Serial.println("entered set time mode");
-
-  int idleMiliseconds = 0;
-  // This counts the number of times you are holding the button down consecutively
-  // Once we notice you're really holding the button down a lot, we will speed up the minute counter
   int exitMode = 0;
 
   while (exitMode == 0) {
 
-    //cli(); //We don't want the interrupt changing values at the same time we are!
-
+    //We don't want the interrupt changing values at the same time we are!
+    //cli();
+    
     while (hours > 12) hours -= 12;
 
     int min_10 = minutes / 10;
     int min_01 = minutes - (min_10 * 10);
 
     long startTime = millis();
-    while ( (millis() - startTime) < 800) {
-      displayNumberFor(hours, true, 20); //Each loop call takes about 8ms, display the number for about x*8ms, then continue
-      delay(5); //Wait before we paint the display again - this makes the dimm effect - waiting
+    while ( (millis() - startTime) < 700) {
+      displayNumberFor(hours, true, 20);
+      delayMicroseconds(5000);
     }
-    delay(600);
+    delayMicroseconds(600000);
 
     startTime = millis();
-    while ( (millis() - startTime) < 500) {
-      displayNumberFor(min_10, false, 20); //Each call takes about 8ms, turn off the colon for about 100ms
-      delay(5); //Wait before we paint the display again
+    while ( (millis() - startTime) < 400) {
+      displayNumberFor(min_10, false, 20);
+      delayMicroseconds(5000);
     }
-    delay(400);
+    delayMicroseconds(400000);
 
     startTime = millis();
-    while ( (millis() - startTime) < 500) {
-      // Each call takes about 8ms, turn off the colon for about 100ms
+    while ( (millis() - startTime) < 400) {
       displayNumberFor(min_01, false, 20);
-      // Wait before we paint the display again
-      delay(5);
+      delayMicroseconds(5000);
     }
 
-    if (digitalRead(theButton) == LOW) {
+    if (digitalRead(topButton) == LOW) {
       exitMode = 1;
       // sei(); //Resume interrupts
-      Serial.println("exit set mode");
     }
 
-    if (digitalRead(theButton2) == LOW) {
-      Serial.println("setting - incrementing - time");
+    if (digitalRead(bottomButton) == LOW) {
       // we have pressed the button - reset the seconds to the end of the minute (i.e. incrementing time by one minute)
       seconds = 60;
       // also calculate other values
@@ -275,6 +261,8 @@ void setTime(void) {
       hours += minutes / 60;
       minutes %= 60;
     }
+
+    delayMicroseconds(600000);
   }
 
 }
